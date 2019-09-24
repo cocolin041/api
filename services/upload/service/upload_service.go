@@ -1,14 +1,16 @@
 package service
 
 import (
+	"encoding/json"
 	"errors"
+	"time"
+
 	"github.com/HackIllinois/api/common/database"
 	"github.com/HackIllinois/api/services/upload/config"
 	"github.com/HackIllinois/api/services/upload/models"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"time"
 )
 
 var db database.Database
@@ -142,6 +144,49 @@ func UpdateBlob(blob models.Blob) error {
 	}
 
 	err := db.Update("blobstore", selector, &blob)
+
+	return err
+}
+
+/*
+	Update partial data of blob with given id.
+	This function convert partial blob data into full blob data with partial values changed, and then call database update
+*/
+func UpdatePartialBlob(blob models.Blob) error {
+	blob_full, err_get := GetBlob(blob.ID)
+
+	if err_get != nil {
+		return errors.New("Blob does not exist.")
+	}
+
+	blob_full_data := map[string]interface{}{}
+	json1, err1 := json.Marshal(blob_full.Data)
+	if err1 != nil {
+		return err1
+	}
+	json.Unmarshal([]byte(json1), &blob_full_data)
+
+	blob_data := map[string]interface{}{}
+	json2, err2 := json.Marshal(blob.Data)
+	if err2 != nil {
+		return err2
+	}
+	json.Unmarshal([]byte(json2), &blob_data)
+
+	for k := range blob_data {
+		blob_full_data[k] = blob_data[k]
+	}
+
+	blob_data_update := models.Blob{
+		ID:   blob.ID,
+		Data: blob_full_data,
+	}
+
+	selector := database.QuerySelector{
+		"id": blob.ID,
+	}
+
+	err := db.Update("blobstore", selector, &blob_data_update)
 
 	return err
 }

@@ -2,11 +2,12 @@ package controller
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/HackIllinois/api/common/errors"
 	"github.com/HackIllinois/api/services/upload/models"
 	"github.com/HackIllinois/api/services/upload/service"
 	"github.com/gorilla/mux"
-	"net/http"
 )
 
 func SetupController(route *mux.Route) {
@@ -18,6 +19,7 @@ func SetupController(route *mux.Route) {
 
 	router.HandleFunc("/blobstore/", CreateBlob).Methods("POST")
 	router.HandleFunc("/blobstore/", UpdateBlob).Methods("PUT")
+	router.HandleFunc("/blobstore/{id}/", UpdatePartialBlob).Methods("PUT")
 	router.HandleFunc("/blobstore/{id}/", GetBlob).Methods("GET")
 }
 
@@ -127,6 +129,35 @@ func UpdateBlob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err := service.UpdateBlob(blob)
+
+	if err != nil {
+		errors.WriteError(w, r, errors.InternalError(err.Error(), "Unable to update blob."))
+		return
+	}
+
+	stored_blob, err := service.GetBlob(blob.ID)
+
+	if err != nil {
+		errors.WriteError(w, r, errors.InternalError(err.Error(), "Unable to retrieve blob."))
+		return
+	}
+
+	json.NewEncoder(w).Encode(stored_blob)
+}
+
+/*
+	Endpoint to update a blob's partial data
+*/
+func UpdatePartialBlob(w http.ResponseWriter, r *http.Request) {
+	var blob models.Blob
+	json.NewDecoder(r.Body).Decode(&blob)
+
+	if blob.ID == "" {
+		errors.WriteError(w, r, errors.InternalError("Must set an id for the blob.", "Must set an id for the blob."))
+		return
+	}
+
+	err := service.UpdatePartialBlob(blob)
 
 	if err != nil {
 		errors.WriteError(w, r, errors.InternalError(err.Error(), "Unable to update blob."))

@@ -1,12 +1,13 @@
 package services
 
 import (
+	"net/http"
+
 	"github.com/HackIllinois/api/gateway/config"
 	"github.com/HackIllinois/api/gateway/middleware"
 	"github.com/HackIllinois/api/gateway/models"
 	"github.com/arbor-dev/arbor"
 	"github.com/justinas/alice"
-	"net/http"
 )
 
 const UploadFormat string = "RAW"
@@ -44,6 +45,12 @@ var UploadRoutes = arbor.RouteCollection{
 		alice.New(middleware.AuthMiddleware([]models.Role{models.AdminRole, models.StaffRole}), middleware.IdentificationMiddleware).ThenFunc(UpdateBlob).ServeHTTP,
 	},
 	arbor.Route{
+		"UpdatePartialBlob",
+		"PATCH",
+		"/upload/blobstore/",
+		alice.New(middleware.AuthMiddleware([]models.Role{models.AdminRole, models.StaffRole}), middleware.IdentificationMiddleware).ThenFunc(UpdatePartialBlob).ServeHTTP,
+	},
+	arbor.Route{
 		"GetBlob",
 		"GET",
 		"/upload/blobstore/{id}/",
@@ -68,6 +75,10 @@ func CreateBlob(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateBlob(w http.ResponseWriter, r *http.Request) {
+	arbor.PUT(w, config.UPLOAD_SERVICE+r.URL.String(), InfoFormat, "", r)
+}
+
+func UpdatePartialBlob(w http.ResponseWriter, r *http.Request) {
 	arbor.PUT(w, config.UPLOAD_SERVICE+r.URL.String(), InfoFormat, "", r)
 }
 
