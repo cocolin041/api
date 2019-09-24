@@ -79,7 +79,7 @@ func UpdateBlob(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdatePartialBlob(w http.ResponseWriter, r *http.Request) {
-	arbor.PUT(w, config.UPLOAD_SERVICE+r.URL.String(), InfoFormat, "", r)
+	arbor.PATCH(w, config.UPLOAD_SERVICE+r.URL.String(), InfoFormat, "", r)
 }
 
 func GetBlob(w http.ResponseWriter, r *http.Request) {

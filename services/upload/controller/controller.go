@@ -19,7 +19,7 @@ func SetupController(route *mux.Route) {
 
 	router.HandleFunc("/blobstore/", CreateBlob).Methods("POST")
 	router.HandleFunc("/blobstore/", UpdateBlob).Methods("PUT")
-	router.HandleFunc("/blobstore/{id}/", UpdatePartialBlob).Methods("PUT")
+	router.HandleFunc("/blobstore/", UpdatePartialBlob).Methods("PATCH")
 	router.HandleFunc("/blobstore/{id}/", GetBlob).Methods("GET")
 }
 

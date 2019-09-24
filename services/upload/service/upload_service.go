@@ -153,12 +153,14 @@ func UpdateBlob(blob models.Blob) error {
 	This function convert partial blob data into full blob data with partial values changed, and then call database update
 */
 func UpdatePartialBlob(blob models.Blob) error {
-	blob_full, err_get := GetBlob(blob.ID)
 
+	// first get the blob with id given to check if it exists
+	blob_full, err_get := GetBlob(blob.ID)
 	if err_get != nil {
 		return errors.New("Blob does not exist.")
 	}
 
+	// create a map of full data for this existed blob (create map so that we can loop through keys afterwards)
 	blob_full_data := map[string]interface{}{}
 	json1, err1 := json.Marshal(blob_full.Data)
 	if err1 != nil {
@@ -166,6 +168,7 @@ func UpdatePartialBlob(blob models.Blob) error {
 	}
 	json.Unmarshal([]byte(json1), &blob_full_data)
 
+	// create a map of partial data for the blob that we get from argument
 	blob_data := map[string]interface{}{}
 	json2, err2 := json.Marshal(blob.Data)
 	if err2 != nil {
@@ -173,19 +176,21 @@ func UpdatePartialBlob(blob models.Blob) error {
 	}
 	json.Unmarshal([]byte(json2), &blob_data)
 
-	for k := range blob_data {
-		blob_full_data[k] = blob_data[k]
+	// iterate over the keys in blob data so that we can update partial values of the full_data
+	for key := range blob_data {
+		blob_full_data[key] = blob_data[key]
 	}
 
+	// create a new blob with full data that we updated
 	blob_data_update := models.Blob{
 		ID:   blob.ID,
 		Data: blob_full_data,
 	}
 
+	// call database function Update to update existed blob
 	selector := database.QuerySelector{
 		"id": blob.ID,
 	}
-
 	err := db.Update("blobstore", selector, &blob_data_update)
 
 	return err
